@@ -62,3 +62,13 @@ test('buildQuarterHourGrid interpolates hourly forecast to 15-min steps', () => 
   assert.equal(grid[8].cloudCover, 100);
   assert.equal(grid[1].time, T0 + 15 * 60000);
 });
+
+test('holdTemp: AC does not cool below the hold temperature', () => {
+  const grid = makeGrid();
+  const series = Thermal.simulate(typicalRoom, grid, 33, T0, 26);
+  // reaches 26 and stays there instead of plunging for the rest of the horizon
+  assert.equal(Thermal.tempAt(series, T0 + 8 * HOUR), 26);
+  // without holdTemp, behavior is unchanged (AC cools indefinitely)
+  const unheld = Thermal.simulate(typicalRoom, grid, 33, T0);
+  assert.ok(Thermal.tempAt(unheld, T0 + 8 * HOUR) < 26);
+});

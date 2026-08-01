@@ -103,7 +103,7 @@
 
   function renderChart(startMs) {
     const outdoor = state.grid.map((p) => ({ x: p.time, y: p.outdoorTemp }));
-    const indoorSeries = Thermal.simulate(state.room, state.grid, state.initialTemp, startMs);
+    const indoorSeries = Thermal.simulate(state.room, state.grid, state.initialTemp, startMs, state.targetTemp);
     const indoor = indoorSeries.map((p) => ({ x: p.time, y: p.temp }));
     const target = [
       { x: state.grid[0].time, y: state.targetTemp },
@@ -129,7 +129,15 @@
             },
             y: { title: { display: true, text: '°C' } },
           },
-          plugins: { acBand: { startMs, endMs: state.targetTimeMs } },
+          plugins: {
+            acBand: { startMs, endMs: state.targetTimeMs },
+            tooltip: {
+              callbacks: {
+                title: (items) => (items.length ? fmtTime(items[0].parsed.x) : ''),
+                label: (item) => item.dataset.label + ': ' + item.parsed.y.toFixed(1) + '°C',
+              },
+            },
+          },
         },
         plugins: [acBandPlugin],
       });

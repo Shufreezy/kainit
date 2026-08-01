@@ -24,8 +24,10 @@
 
   // grid: [{time (ms), outdoorTemp, cloudCover (0-100)}] sorted ascending, ideally uniform 15-min steps.
   // acStartMs: AC is on for grid points with time >= acStartMs.
+  // holdTemp: optional thermostat — when the AC is on, temperature never drops below this
+  // (models the unit cycling off once the desired temp is reached).
   // Returns [{time, temp}] — temp at each grid point.
-  function simulate(room, grid, initialTemp, acStartMs) {
+  function simulate(room, grid, initialTemp, acStartMs, holdTemp) {
     const p = roomParams(room);
     const series = [{ time: grid[0].time, temp: initialTemp }];
     for (let i = 1; i < grid.length; i++) {
@@ -34,7 +36,9 @@
       const sunFactor = 1 - grid[i - 1].cloudCover / 100;
       const heatGain = p.cond * (grid[i - 1].outdoorTemp - prev.temp) + p.solarBase * sunFactor;
       const cooling = grid[i - 1].time >= acStartMs ? p.cooling : 0;
-      series.push({ time: grid[i].time, temp: prev.temp + ((heatGain - cooling) / p.mass) * dtHours });
+      let next = prev.temp + ((heatGain - cooling) / p.mass) * dtHours;
+      if (cooling > 0 && holdTemp != null && next < holdTemp) next = holdTemp;
+      series.push({ time: grid[i].time, temp: next });
     }
     return series;
   }
