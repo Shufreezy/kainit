@@ -14,13 +14,13 @@ A single-page web app for personal use in the Philippines. Given a room's size, 
 - **Cost model:** generic cost-comfort calculator. Manual ₱/kWh input with a sensible default (~₱12/kWh). No electric-company branding or tariff data.
 - **Location:** city search only (Open-Meteo geocoding API). No browser geolocation.
 - **Room model:** square footage + AC HP + three quick toggles: sun exposure (shaded / morning sun / afternoon sun), floor level (top floor under roof / mid or ground floor), construction (concrete / light materials).
-- **Stack:** one self-contained `index.html`, vanilla JS, Chart.js via CDN, Open-Meteo API (free, no API key). Styling with Tailwind CSS (Play CDN) + daisyUI (CDN) for polished, modern components — no build step. (shadcn/ui was considered but rejected: it requires a React + build toolchain, which conflicts with the single-file approach.)
+- **Stack:** static site — `index.html` + plain-JS modules, vanilla JS, Chart.js via CDN, Open-Meteo API (free, no API key). Styling with Tailwind CSS (Play CDN) + daisyUI (CDN) for polished, modern components — no build step. (shadcn/ui was considered but rejected: it requires a React + build toolchain, which conflicts with the no-build approach.)
 - **Thermal engine:** lumped single-zone thermal simulation (Approach A). Self-calibration (Approach C) is a possible future enhancement, out of scope for v1.
 - **Deploy:** Cloudflare Pages (static). Drag-and-drop via dashboard, or `npx wrangler pages deploy . --project-name ac-optimizer`. No backend — browser calls Open-Meteo directly.
 
 ## Architecture
 
-Single `index.html`, internally organized into four plain-JS modules (separate `<script>` blocks, no build step):
+Single static site (`index.html` + `js/*.js` + `tests/*.test.js`), no build step. Pure-logic modules are separate files with a tiny browser/node dual-export shim so they are unit-testable with `node --test`; the browser loads them via plain `<script src>` tags. Deploys to Cloudflare Pages as-is:
 
 ### `weather.js` — Open-Meteo client
 - City search: Open-Meteo geocoding API (`geocoding-api.open-meteo.com`), filtered/ranked for Philippine results.
@@ -60,7 +60,7 @@ Single `index.html`, internally organized into four plain-JS modules (separate `
 
 ## Testing
 
-- `thermal.js` and `optimizer.js` are pure functions → small test suite (`tests.html`, runnable in browser):
+- `thermal.js` and `optimizer.js` are pure functions → unit tests in `tests/*.test.js`, run with Node's built-in runner (`node --test`), covering:
   - Known scenarios (hot sunny day vs. rainy afternoon) asserting cooldown times land in expected ranges.
   - Edge cases: target temp already reached, impossible target (e.g. 16 °C with undersized unit), AC start time at boundaries.
 - UI verified by hand (logic is thin by design).
