@@ -24,7 +24,7 @@ Single `index.html`, internally organized into four plain-JS modules (separate `
 
 ### `weather.js` — Open-Meteo client
 - City search: Open-Meteo geocoding API (`geocoding-api.open-meteo.com`), filtered/ranked for Philippine results.
-- Forecast: one call for hourly temperature, relative humidity, and cloud cover, covering now → end of tomorrow (up to 48h).
+- Forecast: one call for hourly temperature, relative humidity, and cloud cover, covering now → end of tomorrow (up to 48h). Humidity is not used by the thermal model in v1; it is fetched for display (e.g. "feels like" context in the UI) and future use.
 
 ### `thermal.js` — simulation engine (pure, no DOM/fetch)
 - Input: room parameters (area, HP, toggles), hourly forecast array, AC on/off schedule, initial indoor temp.
@@ -47,8 +47,8 @@ Single `index.html`, internally organized into four plain-JS modules (separate `
 
 ## UI layout (single screen, mobile-friendly)
 
-1. **Input panel:** city search; room size (sqm, with sqft toggle); AC HP (0.5–5); desired temp; ₱/kWh (editable, default ~₱12); three toggles; "I want it cool by [time]" (defaults to next reasonable hour).
-2. **Recommendation card:** one sentence, e.g. *"Turn on the AC at **2:15 PM** to reach 26°C by 3:00 PM. Est. cost ₱18 (1.5 kWh) — turning it on now would cost ₱31."*
+1. **Input panel:** city search; room size (sqm, with sqft toggle); AC HP (0.5–5); desired temp; ₱/kWh (editable, default ~₱12); three toggles; "I want it cool by [time]" (defaults to next reasonable hour; may be any hour from now through end of tomorrow, including past midnight).
+2. **Recommendation card:** one sentence, e.g. *"Turn on the AC at **2:15 PM** to reach 26°C by 3:00 PM. Est. cost ₱18 (1.5 kWh) — turning it on now would cost ₱31."* If the target is unreachable (e.g. undersized unit), the card says so plainly — *"26°C isn't reachable by 3:00 PM with this unit; earliest achievable is 27.5°C at 3:00 PM"* — and recommends the earliest start time.
 3. **Interactive graph (Chart.js):** now → end of tomorrow. Three series: forecast outdoor temp, simulated indoor temp with chosen schedule, dashed target-temp line. Slider (or drag on chart) sets AC-on time; indoor curve re-simulates live. AC-on periods shown as a shaded background band.
 4. **Disclaimer:** "Estimates only — actual results vary with room conditions."
 
