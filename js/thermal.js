@@ -56,5 +56,28 @@
     return hp * INPUT_KW_PER_HP * runtimeHours;
   }
 
-  return { roomParams, simulate, tempAt, estimateKwh, WATTS_COOLING_PER_HP, DERATING, INPUT_KW_PER_HP };
+  // hourly: {times: ms[], temps: [], cloud: []} -> uniform 15-min grid, linear interpolation.
+  function buildQuarterHourGrid(hourly) {
+    const grid = [];
+    const STEP = 15 * 60000;
+    for (let t = hourly.times[0]; t <= hourly.times[hourly.times.length - 1]; t += STEP) {
+      grid.push({
+        time: t,
+        outdoorTemp: interp(hourly.times, hourly.temps, t),
+        cloudCover: interp(hourly.times, hourly.cloud, t),
+      });
+    }
+    return grid;
+  }
+
+  function interp(xs, ys, x) {
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[xs.length - 1]) return ys[ys.length - 1];
+    for (let i = 1; i < xs.length; i++) {
+      if (xs[i] >= x) return ys[i - 1] + ((ys[i] - ys[i - 1]) * (x - xs[i - 1])) / (xs[i] - xs[i - 1]);
+    }
+    return ys[ys.length - 1];
+  }
+
+  return { roomParams, simulate, tempAt, estimateKwh, buildQuarterHourGrid, WATTS_COOLING_PER_HP, DERATING, INPUT_KW_PER_HP };
 });

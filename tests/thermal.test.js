@@ -46,3 +46,19 @@ test('light construction cools faster than concrete with same AC', () => {
   const tLight = Thermal.tempAt(lightSeries, T0 + HOUR);
   assert.ok(tLight < tConcrete, `light ${tLight} should be below concrete ${tConcrete}`);
 });
+
+test('buildQuarterHourGrid interpolates hourly forecast to 15-min steps', () => {
+  const hourly = {
+    times: [T0, T0 + HOUR, T0 + 2 * HOUR],
+    temps: [30, 34, 32],
+    cloud: [0, 50, 100],
+  };
+  const grid = Thermal.buildQuarterHourGrid(hourly);
+  assert.equal(grid.length, 9); // 2 hours * 4 + 1
+  assert.equal(grid[0].outdoorTemp, 30);
+  assert.equal(grid[4].outdoorTemp, 34);
+  assert.equal(grid[2].outdoorTemp, 32);   // midpoint interpolation
+  assert.equal(grid[2].cloudCover, 25);
+  assert.equal(grid[8].cloudCover, 100);
+  assert.equal(grid[1].time, T0 + 15 * 60000);
+});
