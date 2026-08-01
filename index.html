@@ -9,10 +9,83 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body class="min-h-screen bg-base-200">
-  <main class="max-w-3xl mx-auto p-4">
-    <h1 class="text-2xl font-bold">Kainit</h1>
-    <p class="text-sm opacity-70">AC Temperature Optimizer — estimates only, actual results vary with room conditions.</p>
-    <!-- UI built out in Task 6 -->
+  <main class="max-w-3xl mx-auto p-4 space-y-4">
+    <div>
+      <h1 class="text-2xl font-bold">Kainit</h1>
+      <p class="text-sm opacity-70">AC Temperature Optimizer — estimates only, actual results vary with room conditions.</p>
+    </div>
+
+    <div class="card bg-base-100 shadow">
+      <div class="card-body gap-3">
+        <div class="flex gap-2">
+          <input id="cityQuery" type="text" placeholder="Search city (e.g. Quezon City)" class="input input-bordered w-full" />
+          <button id="citySearchBtn" class="btn btn-primary">Search</button>
+        </div>
+        <div id="cityResults" class="flex flex-wrap gap-2"></div>
+        <p id="cityLabel" class="text-sm font-medium"></p>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <label class="form-control">
+            <span class="label-text">Room size</span>
+            <div class="join">
+              <input id="area" type="number" min="1" max="500" value="15" class="input input-bordered join-item w-full" />
+              <select id="areaUnit" class="select select-bordered join-item">
+                <option value="sqm">sqm</option>
+                <option value="sqft">sqft</option>
+              </select>
+            </div>
+          </label>
+          <label class="form-control">
+            <span class="label-text">AC horsepower</span>
+            <input id="hp" type="number" min="0.5" max="5" step="0.5" value="1" class="input input-bordered" />
+          </label>
+          <label class="form-control">
+            <span class="label-text">Desired temp (°C)</span>
+            <input id="targetTemp" type="number" min="16" max="30" value="26" class="input input-bordered" />
+          </label>
+          <label class="form-control">
+            <span class="label-text">Rate (₱/kWh)</span>
+            <input id="rate" type="number" min="1" max="50" step="0.1" value="12" class="input input-bordered" />
+          </label>
+          <label class="form-control">
+            <span class="label-text">Sun exposure</span>
+            <select id="sunExposure" class="select select-bordered">
+              <option value="shaded">Shaded</option>
+              <option value="morning">Morning sun</option>
+              <option value="afternoon" selected>Afternoon sun</option>
+            </select>
+          </label>
+          <label class="form-control">
+            <span class="label-text">Construction</span>
+            <select id="construction" class="select select-bordered">
+              <option value="concrete" selected>Concrete</option>
+              <option value="light">Light materials</option>
+            </select>
+          </label>
+          <label class="form-control">
+            <span class="label-text">I want it cool by</span>
+            <input id="targetTime" type="datetime-local" class="input input-bordered" />
+          </label>
+          <label class="flex items-end gap-2 pb-2">
+            <input id="topFloor" type="checkbox" class="checkbox" />
+            <span class="label-text">Top floor (under roof)</span>
+          </label>
+        </div>
+
+        <button id="optimizeBtn" class="btn btn-primary">Find best time</button>
+      </div>
+    </div>
+
+    <div id="error" class="alert alert-error hidden"><span id="errorText"></span></div>
+
+    <div id="resultCard" class="card bg-base-100 shadow hidden">
+      <div class="card-body">
+        <p id="resultText" class="text-lg"></p>
+        <input id="startSlider" type="range" class="range range-primary" step="900000" />
+        <p id="sliderInfo" class="text-sm opacity-80"></p>
+        <div class="h-72"><canvas id="chart"></canvas></div>
+      </div>
+    </div>
   </main>
   <script src="js/thermal.js"></script>
   <script src="js/optimizer.js"></script>
