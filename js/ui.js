@@ -71,7 +71,7 @@
     if (!(area > 0 && area <= 500)) throw new Error('Room size must be between 1 and 500.');
     if (!(hp >= 0.5 && hp <= 5)) throw new Error('AC horsepower must be between 0.5 and 5.');
     if (!(targetTemp >= 16 && targetTemp <= 30)) throw new Error('Desired temp must be between 16 and 30 °C.');
-    if (!(rate > 0)) throw new Error('Rate must be positive.');
+    if (!(rate >= 1 && rate <= 50)) throw new Error('Rate must be between 1 and 50 ₱/kWh.');
     if (!(targetTimeMs > Date.now())) throw new Error('Target time must be in the future.');
     return {
       room: {
@@ -153,6 +153,7 @@
 
   async function runOptimizer() {
     clearError();
+    $('resultCard').classList.add('hidden');
     try {
       if (!state.city) throw new Error('Search and select a city first.');
       const inputs = readInputs();
@@ -192,7 +193,7 @@
       renderChart(Number(slider.value));
       saveSettings();
     } catch (err) {
-      if (err instanceof TypeError || /request failed/i.test(err.message)) {
+      if (err instanceof TypeError || err instanceof SyntaxError || /request failed/i.test(err.message)) {
         showError('Weather service is unavailable right now, please try again in a few minutes.');
       } else {
         showError(err.message);
