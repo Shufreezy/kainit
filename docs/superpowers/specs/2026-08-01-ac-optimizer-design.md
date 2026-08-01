@@ -14,7 +14,7 @@ A single-page web app for personal use in the Philippines. Given a room's size, 
 - **Cost model:** generic cost-comfort calculator. Manual ₱/kWh input with a sensible default (~₱12/kWh). No electric-company branding or tariff data.
 - **Location:** city search only (Open-Meteo geocoding API). No browser geolocation.
 - **Room model:** square footage + AC HP + three quick toggles: sun exposure (shaded / morning sun / afternoon sun), floor level (top floor under roof / mid or ground floor), construction (concrete / light materials).
-- **Stack:** one self-contained `index.html`, vanilla JS, Chart.js via CDN, Open-Meteo API (free, no API key).
+- **Stack:** one self-contained `index.html`, vanilla JS, Chart.js via CDN, Open-Meteo API (free, no API key). Styling with Tailwind CSS (Play CDN) + daisyUI (CDN) for polished, modern components — no build step. (shadcn/ui was considered but rejected: it requires a React + build toolchain, which conflicts with the single-file approach.)
 - **Thermal engine:** lumped single-zone thermal simulation (Approach A). Self-calibration (Approach C) is a possible future enhancement, out of scope for v1.
 - **Deploy:** Cloudflare Pages (static). Drag-and-drop via dashboard, or `npx wrangler pages deploy . --project-name ac-optimizer`. No backend — browser calls Open-Meteo directly.
 
