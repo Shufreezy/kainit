@@ -21,7 +21,6 @@
 
 **Files:**
 - Create: `index.html`
-- Create: `js/.gitkeep`
 
 - [ ] **Step 1: Create directory structure and a minimal `index.html` shell**
 
@@ -417,7 +416,7 @@ Expected: FAIL — `Cannot find module '../js/optimizer.js'`
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `node --test tests/`
+Run: `node --test` (bare invocation; on Node 24, `node --test tests/` fails by treating the directory as a module)
 Expected: 9 passing, 0 failing.
 
 - [ ] **Step 5: Commit**
@@ -469,8 +468,10 @@ Thin fetch wrapper — no unit tests (network boundary); verified with a live sm
     const res = await fetch(url);
     if (!res.ok) throw new Error('Forecast request failed: ' + res.status);
     const data = await res.json();
+    // Open-Meteo returns local wall-clock strings (e.g. "2026-08-02T14:00" means 14:00 in
+    // the location's timezone). As a UTC instant that is t-as-if-UTC MINUS the offset.
     const offsetMs = data.utc_offset_seconds * 1000;
-    const times = data.hourly.time.map((t) => new Date(t + 'Z').getTime() + offsetMs);
+    const times = data.hourly.time.map((t) => new Date(t + 'Z').getTime() - offsetMs);
     return {
       times,
       temps: data.hourly.temperature_2m,
@@ -513,11 +514,14 @@ const W = require('./js/weather.js');
   const fc = await W.fetchForecast(cities[0].latitude, cities[0].longitude);
   console.log('hours:', fc.times.length, 'first temp:', fc.temps[0]);
   console.log('indoor est:', W.initialIndoorEstimate(fc, Date.now()).toFixed(1));
+  // timezone alignment check: 'now' must fall inside the returned time range
+  const ok = fc.times[0] <= Date.now() && Date.now() <= fc.times[fc.times.length - 1];
+  console.log('now within range:', ok);
 })();
 "
 ```
 
-Expected: a non-empty city list whose first result is Quezon City (lat ~14.65, lon ~121.05), 72 hourly entries (24 past + 48 forecast), a plausible temperature, and a plausible indoor estimate. Times must parse as Asia/Manila wall-clock hours regardless of machine timezone (the offset arithmetic above guarantees this).
+Expected: a non-empty city list whose first result is Quezon City (lat ~14.65, lon ~121.05), 72 hourly entries (24 past + 48 forecast), a plausible temperature, a plausible indoor estimate, and `now within range: true` — this last line is the regression check for the timestamp offset conversion (a sign error there shifts all times by 16 hours and fails this check). Times must parse as Asia/Manila wall-clock hours regardless of machine timezone.
 
 - [ ] **Step 3: Commit**
 
@@ -791,18 +795,24 @@ Keep the `<head>` and `<script>` tags from Task 1 unchanged; replace `<main>...<
 
       Object.assign(state, inputs, { grid, nowMs, initialTemp: Weather.initialIndoorEstimate(forecast, Date.now()) });
 
+      // current humidity: first forecast hour at/after now (display only in v1)
+      const hi = forecast.times.findIndex((t) => t >= Date.now());
+      state.humidity = forecast.humidity[hi === -1 ? forecast.humidity.length - 1 : hi];
+
       const res = Optimizer.optimize(state.room, grid, state.initialTemp, state.targetTemp, state.targetTimeMs, nowMs, state.rate);
 
       if (!res.reachable) {
         $('resultText').innerHTML =
           state.targetTemp + '°C isn\'t reachable by ' + fmtTime(state.targetTimeMs) + ' with this unit; ' +
-          'earliest achievable is <b>' + res.achievableTemp.toFixed(1) + '°C</b>. Try a lower target or more time.';
+          'earliest achievable is <b>' + res.achievableTemp.toFixed(1) + '°C</b> — turn it on now, ' +
+          'or try a higher target temp or a later time.';
       } else {
         $('resultText').innerHTML =
           'Turn on the AC at <b>' + fmtTime(res.startMs) + '</b> to reach ' + state.targetTemp + '°C by ' +
           fmtTime(state.targetTimeMs) + '. Est. cost <b>' + peso(res.cost) + '</b> (' + res.kwh.toFixed(2) +
           ' kWh) — turning it on now would cost ' + peso(res.baselineCost) + '.';
       }
+      $('resultText').innerHTML += ' <span class="text-sm opacity-70">(current humidity ' + state.humidity + '%)</span>';
 
       const slider = $('startSlider');
       slider.min = nowMs;
@@ -861,7 +871,7 @@ Keep the `<head>` and `<script>` tags from Task 1 unchanged; replace `<main>...<
 Run `python3 -m http.server 8000`, open `http://localhost:8000`, and check:
 
 1. Search "Quezon City" → result chips appear → click one → label shows the city.
-2. Click "Find best time" → recommendation card appears with a start time, cost, and "turning it on now would cost ₱X" comparison; chart shows outdoor (red), indoor (blue), target (green dashed), and a shaded AC-on band.
+2. Click "Find best time" → recommendation card appears with a start time, cost, and "turning it on now would cost ₱X" comparison; chart shows outdoor (red), indoor (blue), target (green dashed), and a shaded AC-on band. **The chart's left edge must line up with the current wall-clock hour** — if it's offset by many hours, the forecast timestamp conversion is wrong.
 3. Drag the slider → indoor curve, shaded band, and the info line update instantly without network calls (verify in devtools Network tab).
 4. Reload the page → form values and selected city are restored from localStorage.
 5. Search "asdfgh" → "No matching Philippine city found."
@@ -897,6 +907,6 @@ Open the `*.pages.dev` URL and repeat Task 6 Step 3 checks 1–3 on the live sit
 
 ## Done-when
 
-- `node --test tests/` — 9 passing, 0 failing
+- `node --test` — 9 passing, 0 failing
 - All Task 6 manual checks pass locally
 - Site live on Cloudflare Pages and verified
