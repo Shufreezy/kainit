@@ -52,14 +52,18 @@
 
   function clearError() { $('error').classList.add('hidden'); }
 
+  // datetime-local wants local ISO without seconds
+  function localISO(d) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+      'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
   function defaultTargetTime() {
     const d = new Date();
     d.setMinutes(0, 0, 0);
     d.setHours(d.getHours() + 2);
-    // datetime-local wants local ISO without seconds
-    const pad = (n) => String(n).padStart(2, '0');
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
-      'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return localISO(d);
   }
 
   function readInputs() {
@@ -236,7 +240,14 @@
 
   // ---------- init ----------
 
-  $('targetTime').value = defaultTargetTime();
+  const targetTimeInput = $('targetTime');
+  targetTimeInput.value = defaultTargetTime();
+  // forecast horizon is now -> end of tomorrow; don't offer dates outside it
+  const maxD = new Date();
+  maxD.setDate(maxD.getDate() + 1);
+  maxD.setHours(23, 59, 0, 0);
+  targetTimeInput.min = localISO(new Date());
+  targetTimeInput.max = localISO(maxD);
   loadSettings();
   $('citySearchBtn').onclick = searchCity;
   $('cityQuery').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchCity(); });
