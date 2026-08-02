@@ -174,6 +174,7 @@
       const grid = full.filter((p) => p.time >= Date.now() - 15 * 60000);
       if (grid.length < 4) throw new Error('Not enough forecast data.');
       const nowMs = grid[0].time;
+      if (inputs.targetTimeMs > Date.now() + 24 * 3600000) throw new Error('Target time is more than 24 hours ahead.');
       if (inputs.targetTimeMs > grid[grid.length - 1].time) throw new Error('Target time is beyond the forecast horizon (end of tomorrow).');
 
       Object.assign(state, inputs, { grid, nowMs, initialTemp: Weather.initialIndoorEstimate(forecast, Date.now()) });
@@ -242,10 +243,8 @@
 
   const targetTimeInput = $('targetTime');
   targetTimeInput.value = defaultTargetTime();
-  // forecast horizon is now -> end of tomorrow; don't offer dates outside it
-  const maxD = new Date();
-  maxD.setDate(maxD.getDate() + 1);
-  maxD.setHours(23, 59, 0, 0);
+  // forecast window is capped at 24 hours ahead
+  const maxD = new Date(Date.now() + 24 * 3600000);
   targetTimeInput.min = localISO(new Date());
   targetTimeInput.max = localISO(maxD);
   // manual typing bypasses the calendar picker's greyed-out dates — surface it immediately
