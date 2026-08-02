@@ -248,6 +248,8 @@
   maxD.setHours(23, 59, 0, 0);
   targetTimeInput.min = localISO(new Date());
   targetTimeInput.max = localISO(maxD);
+  // manual typing bypasses the calendar picker's greyed-out dates — surface it immediately
+  targetTimeInput.addEventListener('change', () => targetTimeInput.reportValidity());
   loadSettings();
   $('citySearchBtn').onclick = searchCity;
   $('cityQuery').addEventListener('keydown', (e) => { if (e.key === 'Enter') searchCity(); });
